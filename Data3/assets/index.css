@@ -18,7 +18,7 @@
     padding: 10px;
     display: flex;
     height: 60px;
-    /* width: 70vw; */
+    width: 90vw;
     border: 2px solid rgba(0, 0, 0, 0.199);
     /* background-color: aqua; */
     border-radius: 45px;
@@ -114,4 +114,13 @@ h2{
     flex-direction: column;
     justify-content: center;
     align-items: center;
+}
+
+.img{
+    background: url(./logo.jpg) no-repeat center center/cover;
+    height: 70px;
+    width: 70px;
+    border-radius: 70px;
+    border: 1px solid rgba(0, 0, 0, 0.214);
+    margin-right: 60px;
 }

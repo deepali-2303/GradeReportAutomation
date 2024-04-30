@@ -46,6 +46,7 @@ className="Main"
 )
 def mainpage():
     return html.Div([
+        html.Div(className="ele img"),
         html.A("Marks vs Students", href="/marks_vs_students", className="ele"),
         html.A("CGPA vs Semester", href="/cgpVsSem", className="ele"),
         html.A("Overall Performance", href="/overall_performance", className="ele"),
@@ -56,6 +57,7 @@ def mainpage():
 def marks_vs_students_page():
     return html.Div([
         html.Div([
+            html.Div(className="img"),
             html.A("Marks vs Students", href="/marks_vs_students", className="ele active"),
             html.A("CGPA vs Semester", href="/cgpVsSem", className="ele"),
             html.A("Overall Performance", href="/overall_performance", className="ele"),
@@ -106,6 +108,7 @@ def marks_vs_students_page():
 def cgp_vs_sem():
     return html.Div([
         html.Div([
+            html.Div(className="img"),
             html.A("Marks vs Students", href="/marks_vs_students", className="ele"),
             html.A("CGPA vs Semester", href="/cgpVsSem", className="ele active"),
             html.A("Overall Performance", href="/overall_performance", className="ele"),
@@ -128,6 +131,7 @@ def cgp_vs_sem():
 def overall_performance_page():
     return html.Div([
         html.Div([
+            html.Div(className="img"),
             html.A("Marks vs Students", href="/marks_vs_students", className="ele"),
             html.A("CGPA vs Semester", href="/cgpVsSem", className="ele"),
             html.A("Overall Performance", href="/overall_performance", className="ele active"),
@@ -137,19 +141,28 @@ def overall_performance_page():
         className="Nav"
         ),
         html.H2("Overall Performance"),
-        dcc.Dropdown(
-            className="drop",
-            id='student-dropdown2',
-            options=[{'label': uid, 'value': uid} for uid in df['UID']],
-            value=df['UID'].iloc[0],
-            clearable=False,
-        ),
-        dcc.Graph(id='overall-performance-radar-chart', className="cont"),
+        html.Div([
+            dcc.Dropdown(
+                id='csv-dropdown',
+                options=[{'label': file, 'value': file} for file in list_csv_files('Result')],
+                placeholder='Select File',
+                className="drop drop2",
+            ),
+            dcc.Dropdown(
+                id='student-dropdown2',
+                options=[],
+                placeholder='Select UID',
+                className="drop drop2",
+            ),
+        ], className="Box_drop"),
+        dcc.Graph( id='overall-performance-radar-chart', className="cont")
+
     ])
 
 def status_pie_chart():
     return html.Div([
         html.Div([
+            html.Div(className="img"),
             html.A("Marks vs Students", href="/marks_vs_students", className="ele"),
             html.A("CGPA vs Semester", href="/cgpVsSem", className="ele"),
             html.A("Overall Performance", href="/overall_performance", className="ele"),
@@ -175,6 +188,7 @@ def status_pie_chart():
 def funnel():
     return html.Div([
         html.Div([
+            html.Div(className="img"),
             html.A("Marks vs Students", href="/marks_vs_students", className="ele"),
             html.A("CGPA vs Semester", href="/cgpVsSem", className="ele"),
             html.A("Overall Performance", href="/overall_performance", className="ele"),
@@ -207,7 +221,6 @@ def display_page(pathname):
     else:
         return mainpage()
 
-
 @app.callback(
     [Output('subject-dropdown', 'options'),
      Output('subject-dropdown', 'value')],  # Set default value
@@ -224,7 +237,25 @@ def update_subject_dropdown(csv_file):
         return options, default_value
     else:
         return [], None
-    
+
+@app.callback(
+    [Output('student-dropdown2', 'options'),
+     Output('student-dropdown2', 'value')],
+    [Input('csv-dropdown', 'value')]
+)
+def update_uid_dropdown(csv_file):
+    if csv_file:
+        # Read the CSV file
+        df = pd.read_csv(os.path.join('Result', csv_file))
+        # Extract unique UIDs
+        uids = df['UID'].unique()
+        # Create dropdown options
+        options = [{'label': str(uid), 'value': uid} for uid in uids]
+        # Set the default value to the first UID
+        default_value = uids[0]
+        return options, default_value
+    else:
+        return [], None
 
 # Define callback to update graph based on plot type selection
 @app.callback(
@@ -296,58 +327,70 @@ def update_cgpa_line_graph(selected_uid):
     return fig
 
 
-@app.callback(
-    Output('student-bar-graph', 'figure'),
-    [Input('student-dropdown1', 'value')]
-)
-def update_bar_graph(selected_student):
-    student_row = df[df['UID'] == selected_student].iloc[0]
+# @app.callback(
+#     Output('student-bar-graph', 'figure'),
+#     [Input('student-dropdown1', 'value')]
+# )
+# def update_bar_graph(selected_student):
+#     student_row = df[df['UID'] == selected_student].iloc[0]
 
-    subjects = [col.replace('_', ' ') for col in df.columns[2:]]
-    marks = student_row[2:].tolist()
+#     subjects = [col.replace('_', ' ') for col in df.columns[2:]]
+#     marks = student_row[2:].tolist()
 
-    colors = []
-    pass_criteria_df = pd.read_csv('passCriteria.csv')
+#     colors = []
+#     pass_criteria_df = pd.read_csv('passCriteria.csv')
 
-    for subject, mark in zip(subjects, marks):
-        if subject in pass_criteria_df['Subject'].values:
-            pass_criteria = pass_criteria_df[pass_criteria_df['Subject'] == subject]['Pass Marks'].values[0]
-            pass_criteria = int(pass_criteria)
-            if int(mark) < pass_criteria:
-                colors.append('red')
-            else:
-                colors.append('green')
-        else:
-            colors.append('gray')
+#     for subject, mark in zip(subjects, marks):
+#         if subject in pass_criteria_df['Subject'].values:
+#             pass_criteria = pass_criteria_df[pass_criteria_df['Subject'] == subject]['Pass Marks'].values[0]
+#             pass_criteria = int(pass_criteria)
+#             if int(mark) < pass_criteria:
+#                 colors.append('red')
+#             else:
+#                 colors.append('green')
+#         else:
+#             colors.append('gray')
 
-    fig = go.Figure(data=go.Bar(x=subjects, y=marks, marker_color=colors))
-    fig.update_layout(
-        title=f'Marks for Student UID {selected_student}',
-        xaxis_title='Subjects',
-        yaxis_title='Marks',
-        plot_bgcolor='#f9f9f9',
-        margin=dict(t=50, l=50, r=50, b=50),
-    )
-    return fig
+#     fig = go.Figure(data=go.Bar(x=subjects, y=marks, marker_color=colors))
+#     fig.update_layout(
+#         title=f'Marks for Student UID {selected_student}',
+#         xaxis_title='Subjects',
+#         yaxis_title='Marks',
+#         plot_bgcolor='#f9f9f9',
+#         margin=dict(t=50, l=50, r=50, b=50),
+#     )
+#     return fig
 
 @app.callback(
     Output('overall-performance-radar-chart', 'figure'),
-    [Input('student-dropdown2', 'value')]
+    [Input('csv-dropdown', 'value'),
+    Input('student-dropdown2', 'value')]
 )
-def update_radar_chart(selected_student):
-    student_row = df[df['UID'] == selected_student].iloc[0]
-    subjects = [col.replace('_', ' ') for col in df.columns[2:]]
-    marks = student_row[2:].tolist()
-    fig = go.Figure(data=go.Scatterpolar(r=marks, theta=subjects, fill='toself'))
-    fig.update_layout(
-        title=f'Student UID: {selected_student}',
-        polar=dict(
-            radialaxis=dict(visible=True, range=[0, 100]),
-        ),
-        plot_bgcolor='#f9f9f9',
-        margin=dict(t=50, l=50, r=50, b=50),
-    )
-    return fig
+def update_radar_chart(csv_file, selected_uid):
+    if csv_file and selected_uid:
+        # Read the CSV file
+        df = pd.read_csv(os.path.join('Result', csv_file))
+        
+        # Extract the row for the selected UID
+        student_row = df[df['UID'] == selected_uid].iloc[0]
+        
+        # Extract subjects and marks
+        subjects = [col.replace('_', ' ') for col in df.columns[2:]]
+        marks = student_row[2:].tolist()
+        
+        # Create the radar chart
+        fig = go.Figure(data=go.Scatterpolar(r=marks, theta=subjects, fill='toself'))
+        fig.update_layout(
+            title=f'Performance for UID: {selected_uid}',
+            polar=dict(
+                radialaxis=dict(visible=True, range=[0, 100]),
+            ),
+            plot_bgcolor='#f9f9f9',
+            margin=dict(t=50, l=50, r=50, b=50),
+        )
+        return fig
+    else:
+        return go.Figure()
 
 # Define callback to update pie chart based on CSV file selection
 @app.callback(
